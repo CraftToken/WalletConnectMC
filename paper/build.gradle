@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+    alias libs.plugins.shadow
+    alias libs.plugins.pluginyml
+}
+
+description = 'Minecraft web3 integration'
+
+dependencies {
+    implementation project(':common')
+    compileOnly libs.bundles.web3j
+    implementation libs.bundles.hibernate
+    implementation libs.bundles.zxing
+    implementation libs.paper.api // TODO move this to `libraries` field of plugin.yml when velocity implements same feature
+    compileOnly libs.miniplaceholders
+}
+
+bukkit {
+    name = 'WalletConnectMC'
+    main = 'org.craftcoin.walletconnectmc.paper.WalletConnectMC'
+    apiVersion = '1.18'
+    author = 'Sliman4'
+    softDepend = [ 'MiniPlaceholders' ]
+}

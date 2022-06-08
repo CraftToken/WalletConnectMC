@@ -1,0 +1,72 @@
+[versions]
+hibernate = "6.0.1.Final"
+zxing = "3.5.0"
+
+[libraries.web3j-core]
+group = "org.web3j"
+name = "core"
+version = "4.9.2"
+
+[libraries.moshi]
+group = "com.squareup.moshi"
+name = "moshi"
+version = "1.8.0"
+
+[libraries.okhttp3]
+group = "com.squareup.okhttp3"
+name = "okhttp"
+version = "3.11.0"
+
+[libraries.walletconnect]
+group = "com.github.WalletConnect"
+name = "kotlin-walletconnect-lib"
+version = "0.9.6"
+
+[libraries.hibernate-core]
+group = "org.hibernate"
+name = "hibernate-core"
+version = { ref = "hibernate" }
+
+[libraries.hibernate-hikaricp]
+group = "org.hibernate.orm"
+name = "hibernate-hikaricp"
+version = { ref = "hibernate" }
+
+[libraries.paper-api]
+group = "io.papermc.paper"
+name = "paper-api"
+version = "1.18.2-R0.1-SNAPSHOT"
+
+[libraries.zxing-core]
+group = "com.google.zxing"
+name = "core"
+version = { ref = "zxing" }
+
+[libraries.zxing-javase]
+group = "com.google.zxing"
+name = "javase"
+version = { ref = "zxing" }
+
+[libraries.velocity-api]
+group = "com.velocitypowered"
+name = "velocity-api"
+version = "3.1.2-SNAPSHOT" # 3.1.2 adds minimessage
+
+[libraries.mysql-connector]
+group = "mysql"
+name = "mysql-connector-java"
+version = "8.0.29"
+
+[libraries.miniplaceholders]
+group = "com.github.4drian3d"
+name = "MiniPlaceholders"
+version = "1.1.1"
+
+[bundles]
+web3j = ["web3j-core", "moshi", "okhttp3"]
+hibernate = ["hibernate-core", "hibernate-hikaricp"]
+zxing = ["zxing-core", "zxing-javase"]
+
+[plugins]
+shadow = { id = "com.github.johnrengelman.shadow", version = "7.1.2" }
+pluginyml = { id = "net.minecrell.plugin-yml.bukkit", version = "0.5.1" }

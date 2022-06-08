@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    alias libs.plugins.shadow
+}
+
+allprojects {
+    group = 'org.craftcoin.walletconnectmc'
+    version = '0.1.0-SNAPSHOT'
+
+    java.sourceCompatibility = JavaVersion.VERSION_17
+
+    repositories {
+        mavenCentral()
+        
+        // Velocity
+        maven {
+            url = uri('https://repo.papermc.io/repository/maven-public/')
+        }
+
+        // Spigot
+        maven {
+            url = uri('https://hub.spigotmc.org/nexus/content/repositories/snapshots/')
+        }
+
+        // kotlin-walletconnect-lib, miniplaceholders
+        maven {
+            url = uri('https://jitpack.io')
+        }
+    }
+}
+
+dependencies {
+    implementation project(':common')
+    implementation project(':velocity')
+    implementation project(':paper')
+    implementation project(':api')
+}
+
+subprojects.each { subproject -> evaluationDependsOn(subproject.path) }
+
+shadowJar {
+    subprojects.each { subproject ->
+        from subproject.configurations.archives.allArtifacts.files.collect {
+            zipTree(it)
+        }
+    }
+
+    archiveClassifier.set('')
+}
+
+artifacts {
+    archives shadowJar
+}

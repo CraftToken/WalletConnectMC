@@ -1,0 +1,10 @@
+*.class
+*.jar
+hs_err_pid*
+out/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+build/
+.gradle/

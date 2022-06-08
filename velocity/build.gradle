@@ -1,0 +1,15 @@
+plugins {
+    id 'java'
+    alias libs.plugins.shadow
+}
+
+dependencies {
+    implementation project(':common')
+    implementation libs.bundles.web3j
+    implementation libs.bundles.hibernate
+    implementation libs.walletconnect
+    implementation libs.mysql.connector
+    compileOnly libs.velocity.api
+    compileOnly libs.miniplaceholders
+    annotationProcessor libs.velocity.api
+}

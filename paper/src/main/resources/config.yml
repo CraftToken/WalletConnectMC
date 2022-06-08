@@ -1,0 +1,8 @@
+rpc url: "<rpc url>"
+
+messages:
+  url: "<gray>Scan this QR Code with your wallet to connect, or <click:copy_to_clipboard:'<url>'><hover:show_text:'<gray>Click!</gray>'><u><blue>[copy]</blue></u></hover></click> the WalletConnect link.</gray>"
+  sign title: "<dark_green>Sign the message</dark_green>"
+  sign subtitle: ""
+  logged in title: "<green>Logged in</green>"
+  logged in subtitle: ""
