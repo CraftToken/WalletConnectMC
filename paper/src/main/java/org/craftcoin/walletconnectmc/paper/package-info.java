@@ -14,18 +14,4 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package org.craftcoin.walletconnectmc.velocity.events;
-
-import org.walletconnect.Session;
-
-import com.velocitypowered.api.proxy.Player;
-
-/**
- * Called when a user approves/rejects the session request or disconnects.
- *
- * @param player The user.
- * @param session The user's session.
- * @param status The status.
- */
-public record WCSessionStatusChangeEvent(Player player, Session.Status status, Session session) {
-}
+package org.craftcoin.walletconnectmc.paper;

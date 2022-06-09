@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<ruleset name="CraftCoin Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>
+        The CraftCoin configuration for Paper and Velocity plugins
+    </description>
+    
+    <rule ref="category/java/bestpractices.xml" />
+
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="AtLeastOneConstructor" /> <!-- Plugin classes don't need a constructor -->
+    </rule>
+
+    <rule ref="category/java/design.xml">
+        <exclude name="LoosePackageCoupling" />  <!-- Misconfigured by default -->
+        <exclude name="LawOfDemeter" /> <!-- It's hard to understand and fix -->
+    </rule>
+
+    <rule ref="category/java/multithreading.xml">
+        <exclude name="DoNotUseThreads" /> <!-- We don't use J2EE -->
+    </rule>
+
+    <rule ref="category/java/performance.xml" />
+
+    <rule ref="category/java/security.xml" />
+
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="BeanMembersShouldSerialize" /> <!-- False positives on non-beans -->
+    </rule>
+
+    <rule ref="category/java/codestyle.xml/ShortVariable">
+        <properties>
+            <property name="minimum" value="2" /> <!-- Two-letter names are fine -->
+        </properties>
+    </rule>
+
+    <rule ref="category/java/codestyle.xml/LongVariable">
+        <properties>
+            <property name="minimum" value="30" /> <!-- Some crypto-specific things don't have simple names -->
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml/ExcessiveImports">
+        <properties>
+            <property name="minimum" value="50.0" />
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
+        <properties>
+            <property name="problemDepth" value="5" />
+        </properties>
+    </rule>
+
+</ruleset>

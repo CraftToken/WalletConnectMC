@@ -1,9 +1,14 @@
 plugins {
     id 'java'
     alias libs.plugins.shadow
+    id 'com.github.spotbugs' version '5.0.7' apply false
 }
 
 allprojects {
+    apply plugin: 'checkstyle'
+    apply plugin: 'pmd'
+    apply plugin: 'com.github.spotbugs'
+    
     group = 'org.craftcoin.walletconnectmc'
     version = '0.1.0-SNAPSHOT'
 
@@ -26,6 +31,20 @@ allprojects {
         maven {
             url = uri('https://jitpack.io')
         }
+    }
+    
+    pmd {
+        consoleOutput = true
+        toolVersion = '6.46.0'
+        ruleSetFiles = files(new File(rootProject.rootDir, 'config/pmd/pmd.xml'))
+        ruleSets.clear()
+    }
+
+    spotbugs {
+        ignoreFailures = false
+        showStackTraces = true
+        showProgress = true
+        reportLevel = "HIGH"
     }
 }
 
