@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.craftcoin.walletconnectmc.Constants;
 import org.craftcoin.walletconnectmc.Utils;
@@ -34,6 +33,7 @@ import org.web3j.utils.Numeric;
 
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -155,10 +155,10 @@ public record Callback(Player player,
                 Constants.PMC_NAMESPACE,
                 Constants.PMC_AUTH_DONE), new byte[0]);
         plugin.getLoggedIn().add(player);
-        plugin.getProxy().getScheduler().buildTask(plugin, () -> {
-          player.createConnectionRequest(plugin.getProxy().getServer(plugin
-              .getAfterAuthServer()).orElseThrow()).connect();
-        }).delay(1, TimeUnit.SECONDS).schedule();
+        final RegisteredServer server = plugin.getConnectingFrom().remove(player);
+        if (server != null) {
+          player.createConnectionRequest(server).connect();
+        }
       }
     } catch (Exception ignored) {
       player.disconnect(MiniMessage.miniMessage().deserialize(plugin

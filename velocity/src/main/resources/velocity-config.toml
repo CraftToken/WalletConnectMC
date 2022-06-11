@@ -11,10 +11,7 @@ icons = []
 url = "https://example.com"
 
 [auth]
-# After 5 minutes (300 seconds) player will be kicked if they can't authorize
-timeout = 300
 server = "auth"
-after-auth-server = "lobby"
 
 [rpc]
 url = "<rpc url>"
@@ -30,3 +27,4 @@ send-transaction-title = "<gold>Confirm the transaction</gold>"
 send-transaction-subtitle = "<green>Open your wallet and confirm your transaction</green>"
 transaction-success = "<gold>==============================</gold><newline><green>Success! <hover:show_text:'<gray>Click to open</gray>'><click:open_url:'https://etherscan.io/tx/<tx_hash>'><blue><u>View on etherscan</u></blue></click></hover></green><newline><gold>==============================</gold>"
 transaction-error = "<gold>==============================</gold><newline><red>Error! <error> <hover:show_text:'<gray>Click to open</gray>'><click:open_url:'https://discord.gg/'><blue><u>Get help on Discord</u></blue></click></hover></red><newline><gold>==============================</gold>"
+not-connected = "<red>Your wallet is not connected! <blue><hover:show_text:'Click to connect'><click:run_command:/connect><u>Connect</u></click></hover></blue></red>"

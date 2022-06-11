@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -57,7 +58,6 @@ import com.squareup.moshi.Moshi;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
-import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Dependency;
@@ -65,10 +65,10 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.dreamerzero.miniplaceholders.api.MiniPlaceholders;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import okhttp3.OkHttpClient;
 
@@ -95,14 +95,13 @@ public class WalletConnectVelocity {
   private String projectId;
   private List<String> serverIcons;
   private String serverUrl;
-  private String authServer;
-  private String afterAuthServer;
-  private long authTimeout;
+  private RegisteredServer authServer;
   private Toml config;
   private Web3j web3j;
   private long chainId;
   private final Logger logger;
   private final Random random = new Random();
+  private final Map<Player, RegisteredServer> connectingFrom = new ConcurrentHashMap<>();
 
   @Inject
   public WalletConnectVelocity(final ProxyServer proxyServer,
@@ -153,9 +152,19 @@ public class WalletConnectVelocity {
       }
       serverIcons = config.getList("server.icons");
       serverUrl = config.getString("server.url");
-      authServer = config.getString("auth.server");
-      afterAuthServer = config.getString("auth.after-auth-server");
-      authTimeout = config.getLong("auth.timeout");
+
+      final String authServerName = config.getString("auth.server");
+      final Optional<RegisteredServer> optionalAuthServer = proxyServer.getServer(authServerName);
+      if (optionalAuthServer.isPresent()) {
+        authServer = optionalAuthServer.get();
+      } else {
+        if (logger.isLoggable(Level.SEVERE)) {
+          logger.severe(String.format("Auth server with name %s not found!", authServerName));
+        }
+        return;
+      }
+
+      ConnectCommand.register(this);
 
       web3j = Web3j.build(new HttpService(config.getString("rpc url")));
       web3j.ethChainId().sendAsync().thenAccept(res -> chainId = res.getChainId().longValue());
@@ -167,7 +176,7 @@ public class WalletConnectVelocity {
   }
 
   @Subscribe
-  public void onDisable(final ProxyShutdownEvent event) {
+  public void onShutdown(final ProxyShutdownEvent event) {
     sessions.clear();
     connection.close();
     web3j.shutdown();
@@ -193,13 +202,23 @@ public class WalletConnectVelocity {
 
   @Subscribe
   public void onJoin(final ServerConnectedEvent event) {
-    if (sessions.containsKey(event.getPlayer())) {
-      event.getPlayer()
-          .createConnectionRequest(proxyServer.getServer(afterAuthServer).orElseThrow())
-          .connect();
-      return;
-    }
-    if (event.getServer().getServerInfo().getName().equals(authServer)) {
+    if (event.getServer().equals(authServer)) {
+      boolean isAuth = true;
+      if (connectingFrom.containsKey(event.getPlayer())) {
+        event.getPlayer()
+            .createConnectionRequest(connectingFrom.remove(event.getPlayer()))
+            .connect();
+        isAuth = false;
+      }
+      if (event.getPreviousServer().isEmpty()) {
+        // unreachable unless connected from other plugins
+        event.getPlayer().disconnect(Component.empty());
+        isAuth = false;
+      }
+      if (!isAuth) {
+        return;
+      }
+      connectingFrom.put(event.getPlayer(), event.getPreviousServer().orElseThrow());
       proxyServer.getScheduler().buildTask(this, () -> {
         new Thread(() -> {
           final String url = generateNewSessionURL(event.getPlayer());
@@ -211,28 +230,6 @@ public class WalletConnectVelocity {
               out.toByteArray());
         }).start();
       }).delay(SEND_PLUGIN_MESSAGE_DELAY, TimeUnit.MILLISECONDS).schedule();
-      getProxy().getScheduler().buildTask(this, () -> {
-        if (event.getPlayer().isActive() && event.getPlayer()
-            .getCurrentServer()
-            .map(ServerConnection::getServer)
-            .orElse(null)
-            == event.getServer()) {
-          event.getPlayer().disconnect(MiniMessage.miniMessage().deserialize(
-              getMessage("timeout"),
-              getPlaceholders(event.getPlayer())));
-        }
-      }).delay(authTimeout, TimeUnit.SECONDS).schedule();
-    }
-  }
-
-  @Subscribe
-  public void onServerChange(final ServerPreConnectEvent event) {
-    if (!loggedIn.contains(event.getPlayer())) {
-      event.getResult().getServer().ifPresent(server -> {
-        if (!server.getServerInfo().getName().equals(authServer)) {
-          event.setResult(ServerPreConnectEvent.ServerResult.denied());
-        }
-      });
     }
   }
 
@@ -241,15 +238,6 @@ public class WalletConnectVelocity {
     final Session removed = sessions.remove(player);
     if (removed != null) {
       new Thread(removed::kill).start();
-    }
-    if (player.getCurrentServer().isPresent()
-        && !player.getCurrentServer()
-        .get()
-        .getServer()
-        .getServerInfo()
-        .getName()
-        .equals(authServer)) {
-      player.createConnectionRequest(proxyServer.getServer(authServer).orElseThrow()).connect();
     }
   }
 
@@ -281,22 +269,25 @@ public class WalletConnectVelocity {
         sessionConfig.getKey());
   }
 
+  @NotNull
   public ProxyServer getProxy() {
     return proxyServer;
   }
 
-  public String getAuthServer() {
-    return authServer;
+  public Logger getLogger() {
+    return logger;
   }
 
-  public String getAfterAuthServer() {
-    return afterAuthServer;
+  @NotNull
+  public RegisteredServer getAuthServer() {
+    return authServer;
   }
 
   public Toml getConfig() {
     return config;
   }
 
+  @Nullable
   public Session getSession(final Player player) {
     return sessions.get(player);
   }
@@ -342,6 +333,10 @@ public class WalletConnectVelocity {
 
   public String getServerName() {
     return serverName;
+  }
+
+  public Map<Player, RegisteredServer> getConnectingFrom() {
+    return connectingFrom;
   }
 
   private static class MemoryStore implements WCSessionStore {

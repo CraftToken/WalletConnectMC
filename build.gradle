@@ -44,7 +44,7 @@ allprojects {
         ignoreFailures = false
         showStackTraces = true
         showProgress = true
-        reportLevel = "HIGH"
+        reportLevel = 'HIGH'
     }
 }
 

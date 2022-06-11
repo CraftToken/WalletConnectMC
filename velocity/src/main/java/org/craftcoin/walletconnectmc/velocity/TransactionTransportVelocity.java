@@ -54,6 +54,12 @@ public class TransactionTransportVelocity {
         Constants.PMC_TX_REQUEST))
         && event.getTarget() instanceof Player player
         && event.getSource() instanceof ServerConnection server) {
+      final Session session = plugin.getSession(player);
+      if (session == null) {
+        player.sendMessage(MiniMessage.miniMessage()
+            .deserialize(plugin.getMessage("not-connected")));
+        return;
+      }
       final ByteArrayDataInput in = ByteStreams.newDataInput(event.getData());
       final int txId = in.readInt();
       final String from = in.readUTF();
@@ -63,8 +69,7 @@ public class TransactionTransportVelocity {
       final String value = in.readUTF();
       final String data = in.readUTF();
       final String nonce = in.readUTF();
-      @SuppressWarnings("PMD.UseConcurrentHashMap")
-      final Map<String, String> map = new HashMap<>();
+      @SuppressWarnings("PMD.UseConcurrentHashMap") final Map<String, String> map = new HashMap<>();
       map.put("from", from);
       map.put("to", to);
       map.put("data", data.isEmpty() ? "0x" : data);
@@ -88,7 +93,7 @@ public class TransactionTransportVelocity {
               plugin.getPlaceholders(player)),
           Title.Times.times(Duration.ofMillis(300), Duration.ofDays(1), Duration.ZERO)
       ));
-      plugin.getSession(player).performMethodCall(
+      session.performMethodCall(
           new Session.MethodCall.Custom(
               Utils.createCallId(),
               "eth_sendTransaction",
