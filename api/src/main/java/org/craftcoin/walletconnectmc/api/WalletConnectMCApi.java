@@ -31,6 +31,7 @@ import org.craftcoin.walletconnectmc.paper.WalletConnectMC;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.web3j.protocol.Web3j;
 import org.web3j.tx.TransactionManager;
 import org.web3j.utils.Numeric;
@@ -38,6 +39,7 @@ import org.web3j.utils.Numeric;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 
 public class WalletConnectMCApi {
   private final WalletConnectMC plugin;
@@ -55,7 +57,7 @@ public class WalletConnectMCApi {
    * @param player The player.
    * @return Player's address or null if none.
    */
-  public CompletableFuture<byte[]> getAddress(final OfflinePlayer player) {
+  public CompletableFuture<byte @Nullable []> getAddress(final OfflinePlayer player) {
     return getAddress(player.getUniqueId());
   }
 
@@ -65,7 +67,7 @@ public class WalletConnectMCApi {
    * @param player The player's UUID.
    * @return Player's address or null if none.
    */
-  public CompletableFuture<byte[]> getAddress(final UUID player) {
+  public CompletableFuture<byte @Nullable []> getAddress(final UUID player) {
     final CompletableFuture<byte[]> future = new CompletableFuture<>();
     Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
       future.complete(plugin.getAddressBlocking(player));
@@ -85,13 +87,24 @@ public class WalletConnectMCApi {
   /**
    * Gets the {@link TransactionManager} that can be used to
    * send transactions on behalf of the player.
+   * Will return null if the player doesn't have a crypto wallet.
    *
    * @param player The player who will send transactions.
    * @return The transaction manager.
    */
-  public CompletableFuture<TransactionManager> getTransactionManager(final Player player) {
+  public CompletableFuture<@Nullable TransactionManager> getTransactionManager(final
+                                                                               Player player) {
     return getAddress(player)
-        .thenApply(address -> new WCTransactionManager(this, player, Numeric.toHexString(address)));
+        .thenApply(address -> {
+          if (address != null) {
+            return new WCTransactionManager(this, player, Numeric.toHexString(address));
+          } else {
+            player.sendMessage(MiniMessage.miniMessage()
+                .deserialize(WalletConnectMC.getInstance()
+                    .getMessage("not connected")));
+            return null;
+          }
+        });
   }
 
   /**
@@ -125,17 +138,18 @@ public class WalletConnectMCApi {
   public CompletableFuture<List<UUID>> getPlayerAccountsByAddress(final byte @NotNull [] address) {
     final CompletableFuture<List<UUID>> future = new CompletableFuture<>();
     Bukkit.getScheduler().runTaskAsynchronously(WalletConnectMC.getInstance(), () -> {
-      final Session session = WalletConnectMC.getInstance().getConnection().getSession();
-      final CriteriaBuilder builder = session.getCriteriaBuilder();
-      final CriteriaQuery<UuidToAddressMapping> criteriaQuery = builder
-          .createQuery(UuidToAddressMapping.class);
-      final Root<UuidToAddressMapping> root = criteriaQuery.from(UuidToAddressMapping.class);
-      criteriaQuery.select(root).where(builder.equal(root.get("address"), address));
-      final Query<UuidToAddressMapping> query = session.createQuery(criteriaQuery);
-      final List<UuidToAddressMapping> results = query.getResultList();
-      future.complete(results.stream()
-          .map(UuidToAddressMapping::getPlayer)
-          .collect(Collectors.toList()));
+      try (Session session = WalletConnectMC.getInstance().getConnection().openSession()) {
+        final CriteriaBuilder builder = session.getCriteriaBuilder();
+        final CriteriaQuery<UuidToAddressMapping> criteriaQuery = builder
+            .createQuery(UuidToAddressMapping.class);
+        final Root<UuidToAddressMapping> root = criteriaQuery.from(UuidToAddressMapping.class);
+        criteriaQuery.select(root).where(builder.equal(root.get("address"), address));
+        final Query<UuidToAddressMapping> query = session.createQuery(criteriaQuery);
+        final List<UuidToAddressMapping> results = query.getResultList();
+        future.complete(results.stream()
+            .map(UuidToAddressMapping::getPlayer)
+            .collect(Collectors.toList()));
+      }
     });
     return future;
   }

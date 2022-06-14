@@ -51,8 +51,12 @@ public final class DatabaseConnection {
     return factory;
   }
 
-  public Session getSession() {
+  public Session getMainSession() {
     return session;
+  }
+
+  public Session openSession() {
+    return factory.openSession();
   }
 
   public void close() {

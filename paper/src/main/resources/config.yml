@@ -6,3 +6,4 @@ messages:
   sign subtitle: ""
   logged in title: "<green>Logged in</green>"
   logged in subtitle: ""
+  not connected: "Your wallet is not connected! <blue><hover:show_text:'Click to connect'><click:run_command:/connect><u>Connect</u></click></hover></blue>"

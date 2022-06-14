@@ -32,6 +32,7 @@ import org.craftcoin.walletconnectmc.Constants;
 import org.craftcoin.walletconnectmc.DatabaseConnection;
 import org.craftcoin.walletconnectmc.UuidToAddressMapping;
 import org.craftcoin.walletconnectmc.paper.auth.AuthHandler;
+import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.web3j.protocol.Web3j;
@@ -100,9 +101,8 @@ public class WalletConnectMC extends JavaPlugin implements Listener {
 
   @SuppressWarnings({"checkstyle:IllegalCatch", "PMD.AvoidCatchingGenericException"})
   public byte[] getAddressBlocking(final UUID player) {
-    try {
-      final UuidToAddressMapping entry = connection.getSession()
-          .get(UuidToAddressMapping.class, player);
+    try (Session session = connection.openSession()) {
+      final UuidToAddressMapping entry = session.get(UuidToAddressMapping.class, player);
       return entry == null ? null : entry.getAddress();
     } catch (Exception exception) {
       getLogger().severe(exception.toString());

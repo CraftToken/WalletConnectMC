@@ -300,9 +300,8 @@ public class WalletConnectVelocity {
       "PMD.AvoidCatchingGenericException",
       "PMD.AvoidThrowingRawExceptionTypes"})
   public byte[] getAddressBlocking(final UUID player) {
-    try {
-      final UuidToAddressMapping entry = connection.getSession()
-          .get(UuidToAddressMapping.class, player);
+    try (org.hibernate.Session session = connection.openSession()) {
+      final UuidToAddressMapping entry = session.get(UuidToAddressMapping.class, player);
       return entry == null ? null : entry.getAddress();
     } catch (Exception exception) {
       if (logger.isLoggable(Level.SEVERE)) {

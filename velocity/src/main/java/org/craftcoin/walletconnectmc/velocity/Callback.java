@@ -143,10 +143,10 @@ public record Callback(Player player,
       plugin.getProxy().getEventManager().fire(event);
       if (!event.isCancelled()) {
         if (register) {
-          plugin.getConnection().getSession().getTransaction().begin();
-          plugin.getConnection().getSession().persist(new UuidToAddressMapping(player.getUniqueId(),
-              account));
-          plugin.getConnection().getSession().getTransaction().commit();
+          plugin.getConnection().getMainSession().getTransaction().begin();
+          plugin.getConnection().getMainSession().persist(new UuidToAddressMapping(player
+              .getUniqueId(), account));
+          plugin.getConnection().getMainSession().getTransaction().commit();
         }
         player.getCurrentServer()
             .get()
