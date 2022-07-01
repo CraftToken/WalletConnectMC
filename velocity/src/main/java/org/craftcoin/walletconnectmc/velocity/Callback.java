@@ -36,6 +36,7 @@ import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public record Callback(Player player,
@@ -91,14 +92,12 @@ public record Callback(Player player,
           .format(LocalDateTime.now());
       final String message = PlainTextComponentSerializer
           .plainText()
-          .serialize(MiniMessage.builder()
-              .editTags(tags -> {
-                tags
-                    .resolver(Placeholder.unparsed("server", plugin.getServerName()))
-                    .resolver(Placeholder.unparsed("time", now))
-                    .resolver(plugin.getPlaceholders(player));
-              })
-              .build().deserialize(plugin.getMessage("message-to-sign")));
+          .serialize(MiniMessage.miniMessage().deserialize(plugin.getMessage("message-to-sign"),
+              TagResolver.builder()
+                .resolver(Placeholder.unparsed("server", plugin.getServerName()))
+                .resolver(Placeholder.unparsed("time", now))
+                .resolver(plugin.getPlaceholders(player))
+                .build()));
       final byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
       final boolean finalRegister = register;
       session.performMethodCall(
