@@ -32,11 +32,11 @@ public final class ConnectCommand {
     plugin.getProxy().getCommandManager().register(new BrigadierCommand(
         LiteralArgumentBuilder.<CommandSource>literal("connect")
             .requires(sender -> sender.hasPermission("walletconnectmc.connect"))
-            .requires(sender -> sender instanceof Player)
             .requires(sender -> {
-              return !((Player) sender).getCurrentServer()
-                  .orElseThrow()
-                  .getServer().equals(plugin.getAuthServer());
+              return sender instanceof Player player
+                  && !player.getCurrentServer()
+                    .orElseThrow()
+                    .getServer().equals(plugin.getAuthServer());
             })
             .executes(ctx -> {
               ((Player) ctx.getSource())
