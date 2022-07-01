@@ -68,6 +68,10 @@ public class WCTransactionManager extends TransactionManager {
           api.getWeb3().ethEstimateGas(tx).sendAsync().thenAccept(estimation -> {
             // Here in games, we often deal with random, so the outcome of a transaction
             // (including gas used) can be unpredictable, so increase it just in case.
+            if (estimation.getError() != null) {
+              future.completeExceptionally(new RuntimeException(estimation.getError()
+                  .getMessage()));
+            }
             final BigInteger limit = estimation.getAmountUsed().add(INCREASE_GAS_LIMIT);
             api.getWeb3().ethGasPrice().sendAsync().thenAccept(estimation2 -> {
               final BigInteger price = estimation2.getGasPrice();
@@ -91,8 +95,17 @@ public class WCTransactionManager extends TransactionManager {
                           .completeExceptionally(new TransactionException(transactionHashOrError));
                     }
                   });
+            }).exceptionally(exception -> {
+              future.completeExceptionally(exception);
+              return null;
             });
+          }).exceptionally(exception -> {
+            future.completeExceptionally(exception);
+            return null;
           });
+        }).exceptionally(exception -> {
+          future.completeExceptionally(exception);
+          return null;
         });
     final Object obj = future.exceptionally(IOException::new).join();
     if (obj instanceof EthSendTransaction res) {
